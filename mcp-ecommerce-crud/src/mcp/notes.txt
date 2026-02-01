@@ -1,0 +1,227 @@
+ tools, resources, prompts, and sampling in the context of MCP (Model Context Protocol):
+
+
+
+
+
+. Tools
+
+What are they?
+Tools are actions or operations that perform a specific task when called.
+Think of them as functions or commands you can execute with input and get output.
+
+Examples from your code:
+add_product
+add_product_smart
+get_product_by_id
+delete_product
+How are they used?
+
+You call a tool with specific input (like a product ID or product details), and it does something (like add, fetch, or delete a product) and returns a result.
+
+
+---
+
+---
+
+
+
+Resources
+
+What are they?
+
+Resources are collections of data or endpoints you can browse or query.
+
+Think of them as lists or catalogs you can look through, not actions you perform.
+
+Examples from your code:
+products-catalog (all products)
+low-stock-products (products with quantity < 5)
+
+How are they used?
+
+You access a resource to retrieve a set of data (like all products or filtered products), usually for browsing or selection.
+
+
+
+---
+
+---
+
+
+What is a Prompt in MCP?
+
+A prompt in MCP (Model Context Protocol) is a reusable template or instruction that tells the AI how to generate or process text. 
+
+Prompts are used to guide the AI in producing specific types of content, such as product descriptions, summaries, or answers, based on structured input.
+
+How does it work?
+
+You define a prompt with a title, description, and an input schema (what arguments it expects).
+When the prompt is called, it generates a message or set of instructions for the AI model to follow.
+The AI uses this prompt to generate the desired output.
+
+
+What it does:
+It creates a detailed instruction for the AI to generate a product description, including a headline, detailed description, bullet points, and a call-to-action, making the output engaging and SEO-friendly.
+
+
+---
+
+---
+
+What is Sampling in MCP?
+
+
+Sampling in the context of MCP (Model Context Protocol) refers to the process of using an AI model to generate or enhance data dynamically, often by "filling in" missing information or creating new content based on a prompt.
+It means you let the AI "sample" from its knowledge to produce a result, rather than relying only on static or user-provided data.
+
+
+
+
+126 x 9
+What is Sampling in MCP?
+Sampling in the context of MCP (Model Context Protocol) refers to the process of using an AI model to generate or enhance data dynamically, often by "filling in" missing information or creating new content based on a prompt.
+It means you let the AI "sample" from its knowledge to produce a result, rather than relying only on static or user-provided data.
+
+Reference from Your Example
+In your code, the best example of sampling is the add_product_smart tool:
+
+Explanation:
+
+When a user tries to add a product without providing a description, the tool automatically asks the AI to generate a suitable description.
+The AI "samples" a new description based on the product name and price.
+This is sampling: the AI is used to create (sample) new content on demand, making your tool "smart" and user-friendly.
+
+In short:
+
+Sampling is when your MCP server uses the AI to generate new data (like a product description) instead of requiring the user to provide everything manually.
+Your add_product_smart tool is a perfect example of this!
+
+
+
+---
+
+---
+
+C:\Users\prate\AppData\Roaming\Claude\claude_desktop_config.json
+
+
+ "args": ["-y", "tsx", "/absolute/path/to/your/project/src/index.ts"]
+
+
+ 
+{
+
+  "mcpServers": {
+
+    "ecommerce-products": {
+
+      "command": "npx",
+
+      "args": [
+
+        "tsx",
+
+        "/Users/rahulshetty/Downloads/mcp-ecommerce-crud/src/mcp/server.ts"
+
+      ],
+
+}
+
+  }
+
+}
+
+
+
+---
+
+---
+
+
+Why Resources  Matter for Performance:
+
+
+1. CACHING 💾
+Resources help with caching:
+
+Each resource has a unique URI (address)
+MCP can cache (save) a resource after first read
+Next time you need it → instant! No need to fetch again
+
+Example:
+First time: Read "customer://123" → takes 2 seconds
+Second time: Read "customer://123" → instant (from cache)
+
+
+
+2. COST SAVING 💰
+Without resources (old way):
+
+Every time Claude needs info → send EVERYTHING in the prompt
+A 50KB document in your prompt = expensive tokens
+Asked 10 times? = 500KB of tokens charged!
+
+With resources (MCP way):
+
+Document stored as a resource
+Claude just references: "resource://company-policy"
+Only loads when actually needed
+Loaded once, used many times → much cheaper
+
+
+
+
+3. CONTEXT EFFICIENCY 🎯
+The big problem: Claude has a limited context window (like limited brain space)
+Resources solve this:
+
+Instead of stuffing everything into context upfront
+Claude only loads resources it actually needs
+Keeps context clean and focused
+
+Example:
+❌ Bad: Load all 100 customer files into context (waste!)
+✅ Good: Only load "customer://urgent-cases" when needed
+
+
+
+
+4. EFFICIENCY ⚡
+Lazy loading:
+
+Resources aren't loaded until requested
+Save time and bandwidth
+
+
+Parallel processing:
+
+Multiple resources can be fetched at same time
+Faster overall
+
+
+
+
+----
+
+----
+
+Prompt:
+
+
+PLease add this product
+
+
+    sku: 'DEMO-001',
+    name: 'Demo Product',
+    description: 'Just a demo product for tutorial',
+    price: '12.49',
+    quantity: 7,
+
+
+
+
+----
+
+----

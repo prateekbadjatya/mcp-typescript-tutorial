@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation 2: How MCP Server Works</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #f5576c;
+            margin-bottom: 20px;
+            font-size: 3em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .scene {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            border-radius: 20px;
+            padding: 60px;
+            margin-bottom: 30px;
+            position: relative;
+            min-height: 600px;
+            overflow: hidden;
+            border: 5px solid #f5576c;
+        }
+
+        .actor {
+            position: absolute;
+            text-align: center;
+            transition: all 1.5s ease;
+        }
+
+        .actor-emoji {
+            font-size: 100px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+        }
+
+        .actor-label {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .arrow {
+            position: absolute;
+            font-size: 60px;
+            opacity: 0;
+            transition: all 1s ease;
+        }
+
+        .speech {
+            position: absolute;
+            background: white;
+            border: 4px solid #f5576c;
+            border-radius: 20px;
+            padding: 25px;
+            font-size: 1.5em;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 0.5s ease;
+            max-width: 500px;
+        }
+
+        .step-title {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 15px;
+            height: 35px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 3px solid #f5576c;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #00b894, #00cec9);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        button {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            border-radius: 50px;
+            font-size: 1.5em;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        button:hover {
+            background: #00a383;
+            transform: translateY(-3px);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-8deg); }
+            75% { transform: rotate(8deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .bounce { animation: bounce 0.8s ease-in-out; }
+        .shake { animation: shake 0.6s ease-in-out; }
+        .pulse { animation: pulse 1.2s ease-in-out infinite; }
+
+        .number-badge {
+            background: #f5576c;
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Animation 2: Prateek</h1>
+        <h1>How MCP Server Works</h1>
+        <p class="subtitle">Follow the Journey! 🚀</p>
+
+        <div class="step-title" id="stepTitle">
+            Watch How It All Works! 🎯
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar">Ready!</div>
+        </div>
+
+        <div class="scene" id="scene"></div>
+
+        <div class="controls">
+            <button onclick="startJourney()" style="background: #f5576c;">▶️ Start Journey</button>
+            <button onclick="resetJourney()">🔄 Restart</button>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); border-radius: 20px; padding: 30px; margin: 30px 0; color: white;">
+            <h2 style="text-align: center; margin-bottom: 20px; font-size: 2em;">📚 The Complete Journey</h2>
+            <div style="background: white; border-radius: 15px; padding: 25px; color: #333;">
+                <p style="font-size: 1.3em; line-height: 2; margin: 10px 0;">
+                    <strong style="color: #f5576c;">Step 1:</strong> 🙋 You ask AI for help<br>
+                    <strong style="color: #f5576c;">Step 2:</strong> 🤖 AI asks MCP Server<br>
+                    <strong style="color: #f5576c;">Step 3:</strong> 📬 MCP finds what you need<br>
+                    <strong style="color: #f5576c;">Step 4:</strong> 📦 MCP gets the stuff<br>
+                    <strong style="color: #f5576c;">Step 5:</strong> ✅ MCP sends it back<br>
+                    <strong style="color: #f5576c;">Step 6:</strong> 🎉 You get your answer!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateProgress(step, total, text) {
+            const progressBar = document.getElementById('progressBar');
+            const percentage = (step / total) * 100;
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = text;
+        }
+
+        function updateTitle(text) {
+            document.getElementById('stepTitle').textContent = text;
+        }
+
+        function clearScene() {
+            document.getElementById('scene').innerHTML = '';
+        }
+
+        async function startJourney() {
+            const steps = [
+                { duration: 4000, action: step1_YouAsk },
+                { duration: 4000, action: step2_AIAsks },
+                { duration: 4000, action: step3_MCPSearches },
+                { duration: 4000, action: step4_MCPGets },
+                { duration: 4000, action: step5_MCPSends },
+                { duration: 4000, action: step6_YouGetIt }
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                await steps[i].action();
+                await sleep(steps[i].duration);
+            }
+
+            setTimeout(startJourney, 3000);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function step1_YouAsk() {
+            clearScene();
+            updateTitle("Step 1: 🙋 YOU ask for help!");
+            updateProgress(1, 6, 'Step 1: You Ask');
+
+            const you = document.createElement('div');
+            you.className = 'actor bounce';
+            you.style.left = '50%';
+            you.style.top = '50%';
+            you.style.transform = 'translate(-50%, -50%)';
+            you.innerHTML = `
+                <div class="number-badge">1</div>
+                <div class="actor-emoji">👦</div>
+                <div class="actor-label" style="background: #74b9ff; color: white;">YOU</div>
+            `;
+            scene.appendChild(you);
+
+            await sleep(500);
+
+            const speech = document.createElement('div');
+            speech.className = 'speech';
+            speech.style.top = '10%';
+            speech.style.left = '50%';
+            speech.style.transform = 'translateX(-50%)';
+            speech.innerHTML = `
+                <strong style="color: #f5576c; font-size: 1.3em;">🗣️ "Hey, can you help me?"</strong><br><br>
+                "I need to read my homework file!"<br><br>
+                <span style="font-size: 0.9em; color: #666;">You start by asking...</span>
+            `;
+            scene.appendChild(speech);
+            speech.style.opacity = '1';
+        }
+
+        async function step2_AIAsks() {
+            clearScene();
+            updateTitle("Step 2: 🤖 AI asks MCP Server!");
+            updateProgress(2, 6, 'Step 2: AI Asks');
+
+            const ai = document.createElement('div');
+            ai.className = 'actor';
+            ai.style.left = '20%';
+            ai.style.top = '50%';
+            ai.style.transform = 'translateY(-50%)';
+            ai.innerHTML = `
+                <div class="number-badge">2</div>
+                <div class="actor-emoji">🤖</div>
+                <div class="actor-label" style="background: #4CAF50; color: white;">AI (Claude)</div>
+            `;
+            scene.appendChild(ai);
+
+            const mcp = document.createElement('div');
+            mcp.className = 'actor';
+            mcp.style.right = '20%';
+            mcp.style.top = '50%';
+            mcp.style.transform = 'translateY(-50%)';
+            mcp.innerHTML = `
+                <div class="actor-emoji">📬</div>
+                <div class="actor-label" style="background: #667eea; color: white;">MCP Server</div>
+            `;
+            scene.appendChild(mcp);
+
+            await sleep(500);
+
+            const arrow = document.createElement('div');
+            arrow.className = 'arrow';
+            arrow.style.left = '38%';
+            arrow.style.top = '48%';
+            arrow.innerHTML = '➡️➡️➡️';
+            scene.appendChild(arrow);
+            arrow.style.opacity = '1';
+
+            ai.classList.add('bounce');
+
+            await sleep(800);
+
+            const speech = document.createElement('div');
+            speech.className = 'speech';
+            speech.style.top = '10%';
+            speech.style.left = '50%';
+            speech.style.transform = 'translateX(-50%)';
+            speech.innerHTML = `
+                <strong style="color: #4CAF50;">🤖 AI says:</strong><br><br>
+                "MCP Server, can you find<br>the homework file?"
+            `;
+            scene.appendChild(speech);
+            speech.style.opacity = '1';
+        }
+
+        async function step3_MCPSearches() {
+            clearScene();
+            updateTitle("Step 3: 🔍 MCP Server searches!");
+            updateProgress(3, 6, 'Step 3: Searching');
+
+            const mcp = document.createElement('div');
+            mcp.className = 'actor shake pulse';
+            mcp.style.left = '50%';
+            mcp.style.top = '35%';
+            mcp.style.transform = 'translateX(-50%)';
+            mcp.innerHTML = `
+                <div class="number-badge">3</div>
+                <div class="actor-emoji">📬</div>
+                <div class="actor-label" style="background: #667eea; color: white;">MCP Searching...</div>
+            `;
+            scene.appendChild(mcp);
+
+            // Show search locations
+            const locations = [
+                { emoji: '📁', label: 'Files', left: '20%', top: '60%' },
+                { emoji: '💾', label: 'Storage', left: '45%', top: '70%' },
+                { emoji: '☁️', label: 'Cloud', left: '70%', top: '60%' }
+            ];
+
+            for (let loc of locations) {
+                await sleep(400);
+                const item = document.createElement('div');
+                item.className = 'actor';
+                item.style.left = loc.left;
+                item.style.top = loc.top;
+                item.innerHTML = `
+                    <div class="actor-emoji" style="font-size: 70px;">${loc.emoji}</div>
+                    <div class="actor-label" style="background: #95a5a6; color: white; font-size: 1em;">${loc.label}</div>
+                `;
+                scene.appendChild(item);
+            }
+
+            await sleep(500);
+
+            const speech = document.createElement('div');
+            speech.className = 'speech';
+            speech.style.top = '5%';
+            speech.style.left = '50%';
+            speech.style.transform = 'translateX(-50%)';
+            speech.innerHTML = `
+                <strong style="color: #667eea;">🔍 MCP thinks:</strong><br><br>
+                "Let me look everywhere...<br>
+                Files... Storage... Cloud..."
+            `;
+            scene.appendChild(speech);
+            speech.style.opacity = '1';
+        }
+
+        async function step4_MCPGets() {
+            clearScene();
+            updateTitle("Step 4: 📦 MCP Server gets the file!");
+            updateProgress(4, 6, 'Step 4: Getting File');
+
+            const mcp = document.createElement('div');
+            mcp.className = 'actor';
+            mcp.style.left = '30%';
+            mcp.style.top = '50%';
+            mcp.style.transform = 'translateY(-50%)';
+            mcp.innerHTML = `
+                <div class="number-badge">4</div>
+                <div class="actor-emoji">📬</div>
+                <div class="actor-label" style="background: #667eea; color: white;">MCP Server</div>
+            `;
+            scene.appendChild(mcp);
+
+            const file = document.createElement('div');
+            file.className = 'actor';
+            file.style.right = '25%';
+            file.style.top = '50%';
+            file.style.transform = 'translateY(-50%)';
+            file.innerHTML = `
+                <div class="actor-emoji">📄</div>
+                <div class="actor-label" style="background: #f39c12; color: white;">Found It!</div>
+            `;
+            scene.appendChild(file);
+
+            await sleep(500);
+
+            file.classList.add('bounce');
+
+            await sleep(800);
+
+            const arrow = document.createElement('div');
+            arrow.className = 'arrow';
+            arrow.style.left = '45%';
+            arrow.style.top = '48%';
+            arrow.innerHTML = '⬅️⬅️';
+            scene.appendChild(arrow);
+            arrow.style.opacity = '1';
+
+            await sleep(500);
+
+            const speech = document.createElement('div');
+            speech.className = 'speech';
+            speech.style.top = '10%';
+            speech.style.left = '50%';
+            speech.style.transform = 'translateX(-50%)';
+            speech.innerHTML = `
+                <strong style="color: #27ae60;">✅ Found it!</strong><br><br>
+                "I found your homework file!<br>
+                Getting it now..."
+            `;
+            scene.appendChild(speech);
+            speech.style.opacity = '1';
+        }
+
+        async function step5_MCPSends() {
+            clearScene();
+            updateTitle("Step 5: ⬅️ MCP sends it back to AI!");
+            updateProgress(5, 6, 'Step 5: Sending Back');
+
+            const ai = document.createElement('div');
+            ai.className = 'actor';
+            ai.style.left = '20%';
+            ai.style.top = '50%';
+            ai.style.transform = 'translateY(-50%)';
+            ai.innerHTML = `
+                <div class="actor-emoji">🤖</div>
+                <div class="actor-label" style="background: #4CAF50; color: white;">AI (Claude)</div>
+            `;
+            scene.appendChild(ai);
+
+            const mcp = document.createElement('div');
+            mcp.className = 'actor';
+            mcp.style.right = '20%';
+            mcp.style.top = '50%';
+            mcp.style.transform = 'translateY(-50%)';
+            mcp.innerHTML = `
+                <div class="number-badge">5</div>
+                <div class="actor-emoji">📬</div>
+                <div class="actor-label" style="background: #667eea; color: white;">MCP Server</div>
+            `;
+            scene.appendChild(mcp);
+
+            await sleep(500);
+
+            const arrow = document.createElement('div');
+            arrow.className = 'arrow';
+            arrow.style.left = '38%';
+            arrow.style.top = '48%';
+            arrow.innerHTML = '⬅️⬅️⬅️';
+            scene.appendChild(arrow);
+            arrow.style.opacity = '1';
+
+            mcp.classList.add('bounce');
+
+            await sleep(800);
+
+            const speech = document.createElement('div');
+            speech.className = 'speech';
+            speech.style.top = '10%';
+            speech.style.left = '50%';
+            speech.style.transform = 'translateX(-50%)';
+            speech.innerHTML = `
+                <strong style="color: #667eea;">📨 MCP says:</strong><br><br>
+                "Here's the file!<br>
+                All ready for you!"
+            `;
+            scene.appendChild(speech);
+            speech.style.opacity = '1';
+        }
+
+        async function step6_YouGetIt() {
+            clearScene();
+            updateTitle("Step 6: 🎉 YOU get your answer!");
+            updateProgress(6, 6, 'Complete! 🎉');
+
+            const you = document.createElement('div');
+            you.className = 'actor bounce';
+            you.style.left = '50%';
+            you.style.top = '50%';
+            you.style.transform = 'translate(-50%, -50%)';
+            you.innerHTML = `
+                <div class="number-badge">6</div>
+                <div class="actor-emoji">👦</div>
+                <div class="actor-label" style="background: #27ae60; color: white;">HAPPY YOU!</div>
+            `;
+            scene.appendChild(you);
+
+            await sleep(500);
+
+            const speech = document.createElement('div');
+            speech.className = 'speech';
+            speech.style.top = '10%';
+            speech.style.left = '50%';
+            speech.style.transform = 'translateX(-50%)';
+            speech.innerHTML = `
+                <strong style="color: #27ae60; font-size: 1.4em;">🎉 YAY!</strong><br><br>
+                "I got my homework file!<br>
+                Thanks AI and MCP Server!"<br><br>
+                <span style="font-size: 1.1em;">✨ Mission Complete! ✨</span>
+            `;
+            scene.appendChild(speech);
+            speech.style.opacity = '1';
+        }
+
+        function resetJourney() {
+            clearScene();
+            updateTitle("Watch How It All Works! 🎯");
+            updateProgress(0, 6, 'Ready!');
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(startJourney, 1000);
+        });
+    </script>
+</body>
+</html>

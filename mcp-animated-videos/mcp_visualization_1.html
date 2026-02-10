@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Server Explained - Interactive Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .visualization {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            position: relative;
+            min-height: 600px;
+        }
+
+        .component {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .component:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .component-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .component-desc {
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .client {
+            top: 50px;
+            left: 50px;
+            width: 200px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .mcp-server {
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            border-left: 4px solid #667eea;
+        }
+
+        .resources {
+            top: 50px;
+            right: 50px;
+            width: 200px;
+            border-left: 4px solid #FF9800;
+        }
+
+        .tools {
+            top: 280px;
+            right: 50px;
+            width: 200px;
+            border-left: 4px solid #f44336;
+        }
+
+        .prompts {
+            top: 510px;
+            right: 50px;
+            width: 200px;
+            border-left: 4px solid #9C27B0;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .arrow {
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 2s ease-in-out forwards infinite;
+        }
+
+        @keyframes draw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .data-packet {
+            fill: #667eea;
+            opacity: 0;
+            animation: travel 3s ease-in-out infinite;
+        }
+
+        @keyframes travel {
+            0%, 100% {
+                opacity: 0;
+            }
+            10%, 90% {
+                opacity: 1;
+            }
+        }
+
+        .info-section {
+            margin-top: 30px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-card ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .code-example {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .highlight {
+            color: #a6e22e;
+        }
+
+        .keyword {
+            color: #f92672;
+        }
+
+        .string {
+            color: #e6db74;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .step-indicator {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .badge-green { background: #4CAF50; color: white; }
+        .badge-blue { background: #667eea; color: white; }
+        .badge-orange { background: #FF9800; color: white; }
+        .badge-red { background: #f44336; color: white; }
+        .badge-purple { background: #9C27B0; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Model Context Protocol (MCP) Server: Prateek</h1>
+        <p class="subtitle">An Interactive Visualization of How MCP Connects AI Models to External Tools & Data</p>
+
+        <div class="step-indicator" id="stepIndicator">Step 1: Overview</div>
+
+        <div class="visualization" id="vizContainer">
+            <svg id="connections"></svg>
+            
+            <div class="component client">
+                <div class="component-title">
+                    <span class="badge badge-green">CLIENT</span>
+                    AI Application
+                </div>
+                <div class="component-desc">
+                    Claude, ChatGPT, or any AI application that needs access to external tools and data sources.
+                </div>
+            </div>
+
+            <div class="component mcp-server">
+                <div class="component-title">
+                    <span class="badge badge-blue">MCP SERVER</span>
+                    Protocol Bridge
+                </div>
+                <div class="component-desc">
+                    Standardized server that exposes resources, tools, and prompts to AI clients through a unified protocol.
+                </div>
+            </div>
+
+            <div class="component resources">
+                <div class="component-title">
+                    <span class="badge badge-orange">RESOURCES</span>
+                    Data Sources
+                </div>
+                <div class="component-desc">
+                    Files, databases, APIs, documents - any data the AI might need to access.
+                </div>
+            </div>
+
+            <div class="component tools">
+                <div class="component-title">
+                    <span class="badge badge-red">TOOLS</span>
+                    Actions
+                </div>
+                <div class="component-desc">
+                    Functions the AI can execute: search, create files, send emails, run calculations, etc.
+                </div>
+            </div>
+
+            <div class="component prompts">
+                <div class="component-title">
+                    <span class="badge badge-purple">PROMPTS</span>
+                    Templates
+                </div>
+                <div class="component-desc">
+                    Pre-configured prompt templates for common tasks and workflows.
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="changeStep(1)">1. Overview</button>
+            <button onclick="changeStep(2)">2. Connection Flow</button>
+            <button onclick="changeStep(3)">3. Request/Response</button>
+            <button onclick="changeStep(4)">4. Use Cases</button>
+        </div>
+
+        <div class="info-section">
+            <div class="info-card" id="infoCard1">
+                <h3>📋 What is MCP?</h3>
+                <p>The Model Context Protocol (MCP) is an open standard that enables AI applications to securely connect to external data sources and tools. Think of it as a universal adapter that lets AI models interact with your databases, file systems, APIs, and services in a standardized way.</p>
+                <ul>
+                    <li><strong>Standardized:</strong> One protocol works across different AI models and tools</li>
+                    <li><strong>Secure:</strong> Controlled access to resources with proper authentication</li>
+                    <li><strong>Extensible:</strong> Easy to add new capabilities without changing the AI application</li>
+                    <li><strong>Open:</strong> Open-source protocol anyone can implement</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3>🏗️ How MCP Servers Work</h3>
+                <p>An MCP server acts as a bridge between AI applications and external systems:</p>
+                <ul>
+                    <li><strong>Discovery:</strong> The client connects and discovers available resources, tools, and prompts</li>
+                    <li><strong>Request:</strong> The AI sends requests through the MCP protocol (JSON-RPC)</li>
+                    <li><strong>Execute:</strong> The server executes the requested action or retrieves data</li>
+                    <li><strong>Response:</strong> Results are sent back to the AI in a standardized format</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3>🔧 Example: File System MCP Server</h3>
+                <div class="code-example">
+<span class="keyword">const</span> server = <span class="keyword">new</span> <span class="highlight">MCPServer</span>({
+  name: <span class="string">"filesystem-server"</span>,
+  version: <span class="string">"1.0.0"</span>
+});
+
+<span class="comment">// Register a resource (files)</span>
+server.<span class="highlight">resource</span>(<span class="string">"file://documents/*"</span>, {
+  read: <span class="keyword">async</span> (path) => {
+    <span class="keyword">return</span> <span class="keyword">await</span> fs.readFile(path);
+  }
+});
+
+<span class="comment">// Register a tool (search)</span>
+server.<span class="highlight">tool</span>(<span class="string">"search_files"</span>, {
+  description: <span class="string">"Search for files by name"</span>,
+  parameters: { query: <span class="string">"string"</span> },
+  execute: <span class="keyword">async</span> (params) => {
+    <span class="keyword">return</span> <span class="keyword">await</span> searchFiles(params.query);
+  }
+});
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3>💡 Common Use Cases</h3>
+                <ul>
+                    <li><strong>Database Access:</strong> Let AI query and analyze your databases</li>
+                    <li><strong>File Operations:</strong> Read, write, and search files on your system</li>
+                    <li><strong>API Integration:</strong> Connect to Slack, GitHub, Google Drive, etc.</li>
+                    <li><strong>Development Tools:</strong> Code analysis, testing, deployment automation</li>
+                    <li><strong>Business Systems:</strong> CRM, ERP, analytics platforms integration</li>
+                    <li><strong>Custom Workflows:</strong> Build domain-specific tools for your needs</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3>⚡ Key Benefits</h3>
+                <ul>
+                    <li><strong>Reusability:</strong> Write once, use with any MCP-compatible AI</li>
+                    <li><strong>Security:</strong> Granular control over what AI can access</li>
+                    <li><strong>Simplicity:</strong> Standard protocol means less custom code</li>
+                    <li><strong>Composability:</strong> Mix and match multiple MCP servers</li>
+                    <li><strong>Community:</strong> Growing ecosystem of ready-to-use servers</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+
+        function drawConnections() {
+            const svg = document.getElementById('connections');
+            const container = document.getElementById('vizContainer');
+            svg.innerHTML = '';
+
+            // Get component positions
+            const client = document.querySelector('.client');
+            const server = document.querySelector('.mcp-server');
+            const resources = document.querySelector('.resources');
+            const tools = document.querySelector('.tools');
+            const prompts = document.querySelector('.prompts');
+
+            const clientRect = client.getBoundingClientRect();
+            const serverRect = server.getBoundingClientRect();
+            const resourcesRect = resources.getBoundingClientRect();
+            const toolsRect = tools.getBoundingClientRect();
+            const promptsRect = prompts.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            function getRelativeCoords(rect) {
+                return {
+                    x: rect.left - containerRect.left + rect.width / 2,
+                    y: rect.top - containerRect.top + rect.height / 2
+                };
+            }
+
+            const c = getRelativeCoords(clientRect);
+            const s = getRelativeCoords(serverRect);
+            const r = getRelativeCoords(resourcesRect);
+            const t = getRelativeCoords(toolsRect);
+            const p = getRelativeCoords(promptsRect);
+
+            // Draw arrows
+            const arrows = [
+                { x1: c.x + 100, y1: c.y, x2: s.x - 125, y2: s.y, color: '#4CAF50', delay: '0s' },
+                { x1: s.x + 125, y1: s.y - 30, x2: r.x - 100, y2: r.y, color: '#FF9800', delay: '0.5s' },
+                { x1: s.x + 125, y1: s.y, x2: t.x - 100, y2: t.y, color: '#f44336', delay: '1s' },
+                { x1: s.x + 125, y1: s.y + 30, x2: p.x - 100, y2: p.y, color: '#9C27B0', delay: '1.5s' }
+            ];
+
+            arrows.forEach(arrow => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const d = `M ${arrow.x1} ${arrow.y1} L ${arrow.x2} ${arrow.y2}`;
+                path.setAttribute('d', d);
+                path.setAttribute('class', 'arrow');
+                path.setAttribute('stroke', arrow.color);
+                path.style.animationDelay = arrow.delay;
+                svg.appendChild(path);
+
+                // Add animated circle
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('r', '5');
+                circle.setAttribute('class', 'data-packet');
+                circle.setAttribute('fill', arrow.color);
+                
+                const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+                animate.setAttribute('dur', '3s');
+                animate.setAttribute('repeatCount', 'indefinite');
+                animate.setAttribute('path', d);
+                animate.setAttribute('begin', arrow.delay);
+                
+                circle.appendChild(animate);
+                svg.appendChild(circle);
+            });
+        }
+
+        function changeStep(step) {
+            currentStep = step;
+            const indicator = document.getElementById('stepIndicator');
+            
+            switch(step) {
+                case 1:
+                    indicator.textContent = 'Step 1: Overview - Understanding MCP Architecture';
+                    break;
+                case 2:
+                    indicator.textContent = 'Step 2: Connection Flow - How Components Communicate';
+                    break;
+                case 3:
+                    indicator.textContent = 'Step 3: Request/Response - Data Exchange Process';
+                    break;
+                case 4:
+                    indicator.textContent = 'Step 4: Use Cases - Real-World Applications';
+                    break;
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            drawConnections();
+        });
+
+        window.addEventListener('resize', () => {
+            drawConnections();
+        });
+    </script>
+</body>
+</html>

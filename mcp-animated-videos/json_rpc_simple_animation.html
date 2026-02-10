@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON-RPC Explained - Super Simple!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #f5576c;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .story-text {
+            background: #ffe5ec;
+            border: 4px solid #f5576c;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            font-size: 1.3em;
+            line-height: 1.8;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+
+        .story-text strong {
+            color: #f5576c;
+            font-size: 1.1em;
+        }
+
+        .animation-container {
+            background: linear-gradient(to bottom, #ffeaa7 0%, #fab1a0 100%);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            position: relative;
+            min-height: 550px;
+            overflow: hidden;
+            border: 5px solid #f5576c;
+        }
+
+        .character {
+            position: absolute;
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+
+        .character-image {
+            font-size: 80px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+
+        .character-label {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        #kid {
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #friend {
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .letter {
+            position: absolute;
+            background: white;
+            border: 4px solid #f5576c;
+            border-radius: 15px;
+            padding: 20px;
+            width: 250px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 1.5s ease;
+            z-index: 10;
+        }
+
+        .letter-content {
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .letter-title {
+            font-weight: bold;
+            color: #f5576c;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        #request-letter {
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #response-letter {
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .step-description {
+            background: white;
+            border: 4px solid #00b894;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            text-align: center;
+            font-weight: bold;
+            color: #00b894;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        button {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 1.3em;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        button:hover {
+            background: #00a383;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 184, 148, 0.5);
+        }
+
+        .auto-btn {
+            background: #f5576c;
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .auto-btn:hover {
+            background: #e04055;
+        }
+
+        .explanation-box {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 4px solid #5f27cd;
+            box-shadow: 0 5px 15px rgba(95, 39, 205, 0.3);
+            color: white;
+        }
+
+        .explanation-box h3 {
+            color: white;
+            font-size: 1.6em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .explanation-box p {
+            font-size: 1.2em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .simple-list {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            color: #333;
+        }
+
+        .simple-list-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #f5576c;
+            font-size: 1.2em;
+        }
+
+        .emoji-big {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px #f5576c; }
+            50% { box-shadow: 0 0 40px #f5576c, 0 0 60px #f5576c; }
+        }
+
+        .bounce { animation: bounce 0.6s ease-in-out; }
+        .shake { animation: shake 0.5s ease-in-out; }
+        .glow { animation: glow 1s ease-in-out; }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 15px;
+            height: 30px;
+            margin: 20px 0;
+            overflow: hidden;
+            border: 3px solid #f5576c;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #00b894, #00cec9);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .code-box {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+            overflow-x: auto;
+            border: 3px solid #f5576c;
+        }
+
+        .code-label {
+            color: #74b9ff;
+            font-weight: bold;
+        }
+
+        .code-value {
+            color: #fdcb6e;
+        }
+
+        .code-string {
+            color: #55efc4;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            font-size: 1.2em;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .comparison-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .comparison-card h4 {
+            color: #f5576c;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            border: 3px solid #f5576c;
+            border-radius: 20px;
+            padding: 15px;
+            font-size: 1.1em;
+            max-width: 200px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 15px solid transparent;
+        }
+
+        .speech-left::after {
+            right: 100%;
+            top: 50%;
+            border-right-color: #f5576c;
+            margin-top: -15px;
+        }
+
+        .speech-right::after {
+            left: 100%;
+            top: 50%;
+            border-left-color: #f5576c;
+            margin-top: -15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📬 What is JSON-RPC?: Prateek</h1>
+        <p class="subtitle">Explained Super Simply - Like You're 5 Years Old! 🎈</p>
+
+        <div class="story-text">
+            Imagine you want to ask your friend for help, but your friend lives far away! 🏠↔️🏠<br>
+            You write a <strong>special letter ✉️</strong> with exactly what you need.<br>
+            Your friend reads it, does the work, and sends back a <strong>special letter 📨</strong> with the answer!<br>
+            That's <strong>JSON-RPC</strong> - it's like sending special letters between computers! 💌
+        </div>
+
+        <div class="step-description" id="stepDescription">
+            Click "Start Animation" to see the magic! ✨
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar">Ready!</div>
+        </div>
+
+        <div class="animation-container">
+            <div class="character" id="kid">
+                <div class="character-image">👦</div>
+                <div class="character-label" style="background: #00b894; color: white;">
+                    You<br>(Client)
+                </div>
+            </div>
+
+            <div class="character" id="friend">
+                <div class="character-image">👧</div>
+                <div class="character-label" style="background: #f5576c; color: white;">
+                    Your Friend<br>(Server)
+                </div>
+            </div>
+
+            <div class="letter" id="request-letter">
+                <div class="letter-title">📝 REQUEST LETTER</div>
+                <div class="letter-content">
+                    <strong>Dear Friend,</strong><br><br>
+                    <span style="color: #f5576c;">Can you please:</span><br>
+                    ➡️ Add 5 + 3?<br><br>
+                    <span style="color: #666; font-size: 0.8em;">ID: #123</span>
+                </div>
+            </div>
+
+            <div class="letter" id="response-letter">
+                <div class="letter-title">📨 RESPONSE LETTER</div>
+                <div class="letter-content">
+                    <strong>Dear Friend,</strong><br><br>
+                    <span style="color: #00b894;">The answer is:</span><br>
+                    ✅ 8<br><br>
+                    <span style="color: #666; font-size: 0.8em;">ID: #123</span>
+                </div>
+            </div>
+
+            <div class="speech-bubble speech-left" id="bubble1" style="left: 280px; top: 45%;">
+                I need help! 🤔
+            </div>
+            <div class="speech-bubble speech-right" id="bubble2" style="right: 280px; top: 45%;">
+                Let me read it! 📖
+            </div>
+            <div class="speech-bubble speech-right" id="bubble3" style="right: 280px; top: 45%;">
+                Done! Sending back! ✏️
+            </div>
+            <div class="speech-bubble speech-left" id="bubble4" style="left: 280px; top: 45%;">
+                Got it! Thanks! 🎉
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="startAnimation()" class="auto-btn">▶️ Start Animation</button>
+            <button onclick="resetAnimation()">🔄 Reset</button>
+        </div>
+
+        <div class="explanation-box">
+            <h3>🌟 The Complete Story - Step by Step:</h3>
+            
+            <div class="simple-list">
+                <div class="simple-list-item">
+                    <span class="emoji-big">1️⃣</span>
+                    <strong>You have a question:</strong> "What is 5 + 3?" 🤔
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">2️⃣</span>
+                    <strong>You write a special letter (REQUEST):</strong> You write exactly what you need! ✉️
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">3️⃣</span>
+                    <strong>You send the letter:</strong> The mailman takes it to your friend! 🚚
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">4️⃣</span>
+                    <strong>Your friend reads it:</strong> "Oh, they want me to add 5 + 3!" 📖
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">5️⃣</span>
+                    <strong>Your friend does the work:</strong> 5 + 3 = 8! ✅
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">6️⃣</span>
+                    <strong>Friend writes back (RESPONSE):</strong> "The answer is 8!" 📨
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">7️⃣</span>
+                    <strong>You get the letter back:</strong> "Yay! Now I know the answer!" 🎉
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation-box" style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); border-color: #f39c12;">
+            <h3 style="color: #d35400;">📝 What's in the Special Letter?</h3>
+            
+            <div class="comparison-table">
+                <div class="comparison-card">
+                    <h4>📤 REQUEST Letter (You → Friend)</h4>
+                    <div class="code-box">
+{<br>
+  <span class="code-label">"method"</span>: <span class="code-string">"add"</span>,<br>
+  <span class="code-label">"params"</span>: [5, 3],<br>
+  <span class="code-label">"id"</span>: <span class="code-value">123</span><br>
+}
+                    </div>
+                    <div style="margin-top: 15px; color: #2d3436;">
+                        <strong>means:</strong><br>
+                        🔹 What to do: "add"<br>
+                        🔹 Numbers: 5 and 3<br>
+                        🔹 Letter ID: #123
+                    </div>
+                </div>
+
+                <div class="comparison-card">
+                    <h4>📥 RESPONSE Letter (Friend → You)</h4>
+                    <div class="code-box">
+{<br>
+  <span class="code-label">"result"</span>: <span class="code-value">8</span>,<br>
+  <span class="code-label">"id"</span>: <span class="code-value">123</span><br>
+}
+                    </div>
+                    <div style="margin-top: 15px; color: #2d3436;">
+                        <strong>means:</strong><br>
+                        🔹 Answer: 8<br>
+                        🔹 Letter ID: #123<br>
+                        (Same ID so you know which question this answers!)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation-box" style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); border-color: #0652dd;">
+            <h3>🎯 Why Do We Need This?</h3>
+            
+            <div class="simple-list">
+                <div class="simple-list-item">
+                    <span class="emoji-big">📋</span>
+                    <strong>Clear Format:</strong> Everyone knows exactly how to write the letter! No confusion! 
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">🎯</span>
+                    <strong>Works Every Time:</strong> Just like a template - fill in the blanks and it works!
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">🔢</span>
+                    <strong>Track Your Questions:</strong> The ID number helps you know which answer goes with which question!
+                </div>
+                <div class="simple-list-item">
+                    <span class="emoji-big">🌍</span>
+                    <strong>Works Anywhere:</strong> Computers all over the world can understand these special letters!
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <span style="font-size: 1.5em;">💡</span> Fun Fact! <span style="font-size: 1.5em;">💡</span><br>
+            JSON-RPC is like a SUPER organized way for computers to talk to each other!<br>
+            Just like you use specific words to ask your parents for things,<br>
+            computers use JSON-RPC to ask other computers for things! 🤖💬🤖
+        </div>
+
+        <div class="explanation-box" style="background: linear-gradient(135deg, #55efc4 0%, #00b894 100%); border-color: #00796b;">
+            <h3>🏠 Real Life Example:</h3>
+            
+            <div class="simple-list">
+                <div class="simple-list-item" style="border-left-color: #00b894;">
+                    <span class="emoji-big">🎮</span>
+                    <strong>Playing a Game Online:</strong><br>
+                    Your computer sends a REQUEST: "Move my character forward!"<br>
+                    Game server sends RESPONSE: "Done! Your character moved!" ✅
+                </div>
+                <div class="simple-list-item" style="border-left-color: #00b894;">
+                    <span class="emoji-big">🌤️</span>
+                    <strong>Checking the Weather:</strong><br>
+                    Your phone sends REQUEST: "What's the weather today?"<br>
+                    Weather server sends RESPONSE: "It's sunny and 75°F!" ☀️
+                </div>
+                <div class="simple-list-item" style="border-left-color: #00b894;">
+                    <span class="emoji-big">💰</span>
+                    <strong>Asking AI (like Claude!):</strong><br>
+                    App sends REQUEST: "Read this file for me"<br>
+                    MCP Server sends RESPONSE: "Here's what's in the file!" 📄
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation-box" style="background: linear-gradient(135deg, #ff7675 0%, #d63031 100%); border-color: #b71c1c;">
+            <h3>✨ The Magic Parts:</h3>
+            
+            <div class="simple-list">
+                <div class="simple-list-item" style="border-left-color: #d63031;">
+                    <span class="emoji-big">📬</span>
+                    <strong>JSON:</strong> The special language for the letter (like writing in English vs Spanish)
+                </div>
+                <div class="simple-list-item" style="border-left-color: #d63031;">
+                    <span class="emoji-big">📞</span>
+                    <strong>RPC (Remote Procedure Call):</strong> Fancy words for "asking someone far away to do something"
+                </div>
+                <div class="simple-list-item" style="border-left-color: #d63031;">
+                    <span class="emoji-big">🎯</span>
+                    <strong>Together:</strong> JSON-RPC = Sending organized letters to ask computers to do things!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateProgress(step, text) {
+            const progressBar = document.getElementById('progressBar');
+            const percentage = (step / 7) * 100;
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = text;
+        }
+
+        async function startAnimation() {
+            resetAnimation();
+
+            const steps = [
+                { duration: 2500, action: step1 },
+                { duration: 2500, action: step2 },
+                { duration: 2500, action: step3 },
+                { duration: 2500, action: step4 },
+                { duration: 2500, action: step5 },
+                { duration: 2500, action: step6 },
+                { duration: 2500, action: step7 }
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                await steps[i].action();
+                await sleep(steps[i].duration);
+            }
+
+            setTimeout(startAnimation, 2000);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Step 1: You have a question
+        async function step1() {
+            const stepDesc = document.getElementById('stepDescription');
+            stepDesc.textContent = "Step 1: 🤔 You have a question: 'What is 5 + 3?'";
+            stepDesc.style.borderColor = '#00b894';
+            stepDesc.style.color = '#00b894';
+            
+            updateProgress(1, 'Step 1: Question...');
+
+            const kid = document.getElementById('kid');
+            kid.classList.add('bounce');
+            
+            const bubble1 = document.getElementById('bubble1');
+            bubble1.style.opacity = '1';
+            
+            setTimeout(() => kid.classList.remove('bounce'), 600);
+        }
+
+        // Step 2: Write the request letter
+        async function step2() {
+            const stepDesc = document.getElementById('stepDescription');
+            stepDesc.textContent = "Step 2: ✉️ You write a special REQUEST letter!";
+            stepDesc.style.borderColor = '#6c5ce7';
+            stepDesc.style.color = '#6c5ce7';
+            
+            updateProgress(2, 'Step 2: Writing...');
+
+            const bubble1 = document.getElementById('bubble1');
+            bubble1.style.opacity = '0';
+
+            const requestLetter = document.getElementById('request-letter');
+            requestLetter.style.opacity = '1';
+            requestLetter.classList.add('glow');
+        }
+
+        // Step 3: Send the letter
+        async function step3() {
+            const stepDesc = document.getElementById('stepDescription');
+            stepDesc.textContent = "Step 3: 🚚 Sending the letter to your friend!";
+            stepDesc.style.borderColor = '#f39c12';
+            stepDesc.style.color = '#f39c12';
+            
+            updateProgress(3, 'Step 3: Sending...');
+
+            const requestLetter = document.getElementById('request-letter');
+            requestLetter.classList.remove('glow');
+            
+            await sleep(300);
+            requestLetter.style.left = 'calc(50% - 125px)';
+            requestLetter.style.top = 'calc(50% - 100px)';
+
+            await sleep(1000);
+            requestLetter.style.left = 'calc(100% - 300px)';
+        }
+
+        // Step 4: Friend reads the letter
+        async function step4() {
+            const stepDesc = document.getElementById('stepDescription');
+            stepDesc.textContent = "Step 4: 📖 Your friend reads the letter!";
+            stepDesc.style.borderColor = '#f5576c';
+            stepDesc.style.color = '#f5576c';
+            
+            updateProgress(4, 'Step 4: Reading...');
+
+            const requestLetter = document.getElementById('request-letter');
+            requestLetter.style.opacity = '0';
+
+            const friend = document.getElementById('friend');
+            friend.classList.add('shake');
+            
+            const bubble2 = document.getElementById('bubble2');
+            bubble2.style.opacity = '1';
+            
+            setTimeout(() => friend.classList.remove('shake'), 500);
+        }
+
+        // Step 5: Friend does the work
+        async function step5() {
+            const stepDesc = document.getElementById('stepDescription');
+            stepDesc.textContent = "Step 5: 🧮 Friend calculates: 5 + 3 = 8!";
+            stepDesc.style.borderColor = '#0984e3';
+            stepDesc.style.color = '#0984e3';
+            
+            updateProgress(5, 'Step 5: Working...');
+
+            const bubble2 = document.getElementById('bubble2');
+            bubble2.style.opacity = '0';
+
+            const friend = document.getElementById('friend');
+            friend.classList.add('bounce');
+            
+            setTimeout(() => friend.classList.remove('bounce'), 600);
+        }
+
+        // Step 6: Friend writes and sends response
+        async function step6() {
+            const stepDesc = document.getElementById('stepDescription');
+            stepDesc.textContent = "Step 6: 📨 Friend writes RESPONSE and sends it back!";
+            stepDesc.style.borderColor = '#9C27B0';
+            stepDesc.style.color = '#9C27B0';
+            
+            updateProgress(6, 'Step 6: Responding...');
+
+            const bubble3 = document.getElementById('bubble3');
+            bubble3.style.opacity = '1';
+
+            const responseLetter = document.getElementById('response-letter');
+            responseLetter.style.opacity = '1';
+            responseLetter.classList.add('glow');
+
+            await sleep(1000);
+            bubble3.style.opacity = '0';
+            responseLetter.classList.remove('glow');
+
+            await sleep(300);
+            responseLetter.style.left = 'calc(50% - 125px)';
+            responseLetter.style.top = 'calc(50% - 100px)';
+
+            await sleep(1000);
+            responseLetter.style.left = '50px';
+        }
+
+        // Step 7: You receive and read the answer
+        async function step7() {
+            const stepDesc = document.getElementById('stepDescription');
+            stepDesc.textContent = "Step 7: 🎉 You get the answer: It's 8! Yay!";
+            stepDesc.style.borderColor = '#00b894';
+            stepDesc.style.color = '#00b894';
+            
+            updateProgress(7, 'Complete! 🎉');
+
+            const kid = document.getElementById('kid');
+            kid.classList.add('bounce');
+            
+            const bubble4 = document.getElementById('bubble4');
+            bubble4.style.opacity = '1';
+            
+            setTimeout(() => kid.classList.remove('bounce'), 600);
+
+            await sleep(2000);
+            bubble4.style.opacity = '0';
+            
+            const responseLetter = document.getElementById('response-letter');
+            responseLetter.style.opacity = '0';
+        }
+
+        function resetAnimation() {
+            document.getElementById('request-letter').style.opacity = '0';
+            document.getElementById('request-letter').style.left = '50px';
+            document.getElementById('request-letter').style.top = '50%';
+            
+            document.getElementById('response-letter').style.opacity = '0';
+            document.getElementById('response-letter').style.left = 'calc(100% - 300px)';
+            document.getElementById('response-letter').style.top = '50%';
+            
+            document.getElementById('bubble1').style.opacity = '0';
+            document.getElementById('bubble2').style.opacity = '0';
+            document.getElementById('bubble3').style.opacity = '0';
+            document.getElementById('bubble4').style.opacity = '0';
+            
+            document.getElementById('stepDescription').textContent = "Click 'Start Animation' to see the magic! ✨";
+            document.getElementById('stepDescription').style.borderColor = '#00b894';
+            document.getElementById('stepDescription').style.color = '#00b894';
+            
+            updateProgress(0, 'Ready!');
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(startAnimation, 1000);
+        });
+    </script>
+</body>
+</html>
